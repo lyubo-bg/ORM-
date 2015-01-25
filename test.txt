@@ -1,2 +1,2 @@
-con = MyORM::Connection.new(adapter: 'mysql2', database:'test', host:'localhost', username: 'root', password: '123123q');
+con = MyORM::Connection.new(adapter: 'mysql2', database:'test', host:'localhost', username: 'root', password: '');
 cls = MyORM::Base.new "explore", con
