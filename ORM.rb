@@ -25,10 +25,9 @@ module MyORM
   end
 
   class Base
-    def initialize(name, connection)
+    def initialize(connection)
       @connection = connection
-      @name = name
-      if make_attr_accessor
+      if make_attr_accessor self.class
         puts "Your mapping has been done successfully!"
       else
         puts "Your mapping can't be done the table
