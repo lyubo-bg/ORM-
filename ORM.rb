@@ -27,7 +27,8 @@ module MyORM
   class Base
     def initialize(connection)
       @connection = connection
-      if make_attr_accessor self.class
+      @name = self.class.name.downcase
+      if make_attr_accessor
         puts "Your mapping has been done successfully!"
       else
         puts "Your mapping can't be done the table
@@ -41,7 +42,8 @@ module MyORM
       if table_exists? name
         schema = get_schema_by_name
         schema.each do |column|
-          create_method(column["Field"])
+          puts column["Field"]
+          create_attr(column["Field"])
         end
         return true
       end
@@ -75,13 +77,14 @@ module MyORM
     end
 
     def table_exists?(name)
-      flag = true;
       begin
         connection.connection.query("show columns from #{name}")
       rescue => ex
-        flag = false
+        puts 'madafaka'
+        return false
       end
-      flag
+      puts 'tuka sum mai'
+      true
     end
   end
 end
