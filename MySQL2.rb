@@ -1,10 +1,12 @@
+load 'ORM.rb'
+
 module MyORM
 	class MySQL2
 		class << self
 			def set_connection con
 				@@connection = con
 			end
-			def get_partial_schema()
+			def get_partial_schema name
 	      query_string = "SHOW COLUMNS FROM #{name}"
 	      result = @@connection.connection.query(query_string)
 	      table_info = []
@@ -15,14 +17,14 @@ module MyORM
 	      end
 	      table_info
 	    end
-	    def get_full_schema()
+	    def get_full_schema name
 	      query_string = "SHOW COLUMNS FROM #{name}"
-	      result = @connection.connection.query(query_string)
+	      result = @@connection.connection.query(query_string)
 	      result.each { |row| puts row }
     	end
     	def table_exists?(name)
 	      begin
-	        connection.connection.query("show columns from #{name}")
+	        @@connection.connection.query("show columns from #{name}")
 	      rescue => ex
 	        return false
 	      end

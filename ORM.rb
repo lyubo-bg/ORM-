@@ -34,7 +34,11 @@ module MyORM
 
   class Base
     def self.inherited subclass
-      
+      self.create_initialize
+    end
+
+    def self.set_con con
+      @@connection = con
     end
 
     def self.get_connection_params_from_config_file
@@ -78,8 +82,8 @@ module MyORM
       puts val
     end
 
-    def get_constructor_params
-      schema = get_full_schema
+    def self.get_constructor_params
+      schema = self.get_full_schema
       constructor_params_arr = []
       schema.each do |row| 
         temp = BaseUtils.create_initialize_param row 
@@ -103,26 +107,26 @@ module MyORM
     end
 
     #Gets partial table schema by class name
-    def get_partial_schema()
+    def self.get_partial_schema()
       query_string = "SHOW COLUMNS FROM #{name}"
       result = @connection.connection.query(query_string)
       table_info = []
       result.each do | row |
         temp = {}
         temp["Field"], temp["Type"] = row["Field"], row["Type"]
-        table_info << temp
+       table_info << temp
       end
       table_info
     end
 
     #Gets full table schema by class name
-    def get_full_schema()
+    def self.get_full_schema()
       query_string = "SHOW COLUMNS FROM #{name}"
       result = @connection.connection.query(query_string)
       result.each { |row| puts row }
     end
 
-    def table_exists?(name)
+    def self.table_exists?(name)
       begin
         connection.connection.query("show columns from #{name}")
       rescue => ex
