@@ -1,0 +1,5 @@
+adapter mysql2
+database test
+host localhost
+username root
+password 123123q

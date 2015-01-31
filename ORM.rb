@@ -14,8 +14,11 @@ module MyORM
       else
         puts "You have given this adapter: #{adapter}, which is invalid"
       end
-
     end
+
+    # def fill_config_file(adapter:, database:,host: nil, username: nil, password: nil)
+    #   f = File.open("config.rb", "w") { |file|  }
+    # end
 
     attr_accessor :connection
 
@@ -30,6 +33,22 @@ module MyORM
   end
 
   class Base
+    def self.inherited subclass
+      
+    end
+
+    def self.get_connection_params_from_config_file
+      content_array = []
+      f = File.open("config.txt", "r") or die "Unable to open config file."
+      f.each_line { |line| content_array << line.chomp }
+      params_hash = {}
+      content_array.each do |el|
+        temp = el.split(" ")
+         params_hash[temp[0].to_sym] = temp[1]
+      end
+      params_hash
+    end
+
     def initialize(connection)
       @connection = connection
       @name = self.class.name.downcase
@@ -54,29 +73,19 @@ module MyORM
       false
     end
 
-    def create_initialize()
+    def add_prop_to_db name, val
+      puts name
+      puts val
+    end
+
+    def get_constructor_params
       schema = get_full_schema
       constructor_params_arr = []
       schema.each do |row| 
-        constructor_params_arr << create_initialize_param row
+        temp = BaseUtils.create_initialize_param row 
+        constructor_params_arr << temp
       end
       constructor_params = constructor_params_arr.join(", ")
-      initialize_body = "def initialize(con, #{constructor_params}) 
-                           super(con)
-                           schema = get_partial_schema
-                           schema.each do |row|
-                             add_prop_to_db row['Field'].to_s, row['Field'] if row['Field'] 
-                           end
-                         end"
-      self.class_eval(initialize_body)
-    end
-
-    def create_initialize_param(row) 
-      if row["NULL"] == 'NO'
-        row["Field"] + ':'
-      else
-        row["Field"] + ": nil"
-      end
     end
 
     def create_method( name, &block )
@@ -84,11 +93,11 @@ module MyORM
     end
 
     def create_attr( name )
-      create_method( "#{name}=".to_sym ) do |val| 
+      create_method( "#{name}=".to_sym ) do |val|
         instance_variable_set( "@" + name, val)
       end
 
-      create_method( name.to_sym ) do 
+      create_method( name.to_sym ) do
         instance_variable_get( "@" + name ) 
       end
     end
@@ -121,11 +130,28 @@ module MyORM
       end
       true
     end
+
+    def self.create_initialize()
+      constructor_params = get_constructor_params
+      res = BaseUtils.initialize_body constructor_params
+      self.class.class_eval res
+    end
+
   end
 
   class BaseUtils
+    def self.initialize_body constructor_params
+      "def test(con, #{constructor_params})
+         puts 'lainenCA'
+         schema = get_partial_schema
+         schema.each do |row|
+           add_prop_to_db row['Field'].to_s, row['Field'] if row['Field'] 
+         end
+       end"
+    end
+
     def self.create_initialize_param(row) 
-      if row["NULL"] == 'NO'
+      if row["NULL"] === "NO"
         row["Field"] + ':'
       else
         row["Field"] + ": nil"
