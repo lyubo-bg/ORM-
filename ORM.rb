@@ -34,11 +34,16 @@ module MyORM
 
   class Base
     def self.inherited subclass
+      @@name = subclass.name.downcase
       self.create_initialize
     end
 
-    def self.set_con con
+    def self.connection= con
       @@connection = con
+    end
+
+    def self.connection
+      @@connection
     end
 
     def self.get_connection_params_from_config_file
@@ -67,8 +72,8 @@ module MyORM
     attr_accessor :connection, :name
 
     def make_attr_accessor
-      if table_exists? name
-        schema = get_partial_schema
+      if table_exists? @name
+        schema = self.get_partial_schema
         schema.each do |column|
           create_attr(column["Field"])
         end
@@ -77,7 +82,7 @@ module MyORM
       false
     end
 
-    def add_prop_to_db name, val
+    def self.add_prop_to_db name, val
       puts name
       puts val
     end
@@ -107,8 +112,8 @@ module MyORM
     end
 
     #Gets partial table schema by class name
-    def self.get_partial_schema()
-      query_string = "SHOW COLUMNS FROM #{name}"
+    def get_partial_schema()
+      query_string = "SHOW COLUMNS FROM #{@@name}"
       result = @connection.connection.query(query_string)
       table_info = []
       result.each do | row |
@@ -120,15 +125,15 @@ module MyORM
     end
 
     #Gets full table schema by class name
-    def self.get_full_schema()
-      query_string = "SHOW COLUMNS FROM #{name}"
+    def get_full_schema()
+      query_string = "SHOW COLUMNS FROM #{@@name}"
       result = @connection.connection.query(query_string)
       result.each { |row| puts row }
     end
 
-    def self.table_exists?(name)
+    def table_exists?(name)
       begin
-        connection.connection.query("show columns from #{name}")
+        @connection.connection.query("show columns from #{name}")
       rescue => ex
         return false
       end
@@ -138,6 +143,7 @@ module MyORM
     def self.create_initialize()
       constructor_params = get_constructor_params
       res = BaseUtils.initialize_body constructor_params
+      puts res
       self.class.class_eval res
     end
 
@@ -145,11 +151,12 @@ module MyORM
 
   class BaseUtils
     def self.initialize_body constructor_params
-      "def test(con, #{constructor_params})
+      "def initialize(con:, #{constructor_params})
          puts 'lainenCA'
+         super(con)
          schema = get_partial_schema
          schema.each do |row|
-           add_prop_to_db row['Field'].to_s, row['Field'] if row['Field'] 
+           self.add_prop_to_db row['Field'].to_s, row['Field'] if row['Field']
          end
        end"
     end

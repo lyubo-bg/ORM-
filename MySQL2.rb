@@ -3,7 +3,7 @@ load 'ORM.rb'
 module MyORM
 	class MySQL2
 		class << self
-			def set_connection con
+			def connection= con
 				@@connection = con
 			end
 			def get_partial_schema name
