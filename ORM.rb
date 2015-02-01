@@ -1,39 +1,24 @@
 require "mysql2"
+load 'Connection.rb'
+load 'DatabaseManager.rb'
 
 module MyORM
-  class Connection
-
-    # The constructor accepts a connection hash 
-    # adapter: which database provider you will use 
-    # database, host, username & password 
-    def initialize(adapter:, database:,host: nil, username: nil, password: nil)
-      if(adapter == "mysql2")
-        @connection = establish_connection_mysql2(database: database, host: host, username: username, password: password)
-      elsif (adapter == 'sqlite3')
-        @connection = establish_connection_sqlite
+  class Base
+    def initialize (connection)
+      @connection = connection
+      @name = self.class.name.downcase
+      if make_attr_accessor
+        puts "Your mapping has been done successfully!"
       else
-        puts "You have given this adapter: #{adapter}, which is invalid"
+        puts "Your mapping can't be done the table
+        you have chosen probably doesn't exist!"
       end
     end
 
-    # def fill_config_file(adapter:, database:,host: nil, username: nil, password: nil)
-    #   f = File.open("config.rb", "w") { |file|  }
-    # end
-
-    attr_accessor :connection
-
-    #Makes connection with the server
-    def establish_connection_mysql2(database:,host:,username:,password:)
-      Mysql2::Client.new(:host => host, :username => username, :password => password, :database => database)
-    end 
-
-    def establish_connection_sqlite(database:,host:)
-      
-    end
-  end
-
-  class Base
     def self.inherited subclass
+      MyORM::DatabaseManager.connection = self.connection
+      MyORM::DatabaseManager.flag = "mysql"
+      MyORM::DatabaseManager.connection_to_db
       @@name = subclass.name.downcase
       self.create_initialize
     end
@@ -58,22 +43,11 @@ module MyORM
       params_hash
     end
 
-    def initialize(connection)
-      @connection = connection
-      @name = self.class.name.downcase
-      if make_attr_accessor
-        puts "Your mapping has been done successfully!"
-      else
-        puts "Your mapping can't be done the table
-        you have chosen probably doesn't exist!"
-      end
-    end
-
     attr_accessor :connection, :name
 
     def make_attr_accessor
-      if table_exists? @name
-        schema = self.get_partial_schema
+      if MyORM::DatabaseManager.table_exists? name
+        schema = MyORM::DatabaseManager.get_partial_schema name
         schema.each do |column|
           create_attr(column["Field"])
         end
@@ -88,13 +62,13 @@ module MyORM
     end
 
     def self.get_constructor_params
-      schema = self.get_full_schema
+      schema = MyORM::DatabaseManager.get_full_schema @@name
       constructor_params_arr = []
       schema.each do |row| 
         temp = BaseUtils.create_initialize_param row 
         constructor_params_arr << temp
       end
-      constructor_params = constructor_params_arr.join(", ")
+      constructor_params_arr.join(", ")
     end
 
     def create_method( name, &block )
@@ -111,52 +85,22 @@ module MyORM
       end
     end
 
-    #Gets partial table schema by class name
-    def get_partial_schema()
-      query_string = "SHOW COLUMNS FROM #{@@name}"
-      result = @connection.connection.query(query_string)
-      table_info = []
-      result.each do | row |
-        temp = {}
-        temp["Field"], temp["Type"] = row["Field"], row["Type"]
-       table_info << temp
-      end
-      table_info
-    end
-
-    #Gets full table schema by class name
-    def get_full_schema()
-      query_string = "SHOW COLUMNS FROM #{@@name}"
-      result = @connection.connection.query(query_string)
-      result.each { |row| puts row }
-    end
-
-    def table_exists?(name)
-      begin
-        @connection.connection.query("show columns from #{name}")
-      rescue => ex
-        return false
-      end
-      true
-    end
-
     def self.create_initialize()
       constructor_params = get_constructor_params
       res = BaseUtils.initialize_body constructor_params
       puts res
-      self.class.class_eval res
+      self.class_eval res
     end
 
   end
 
   class BaseUtils
     def self.initialize_body constructor_params
-      "def initialize(con:, #{constructor_params})
-         puts 'lainenCA'
-         super(con)
-         schema = get_partial_schema
+      "def initialize(#{constructor_params})
+         super MyORM::DatabaseManager.connection
+         schema = MyORM::DatabaseManager.get_partial_schema self.class.name.downcase
          schema.each do |row|
-           self.add_prop_to_db row['Field'].to_s, row['Field'] if row['Field']
+           puts row['Field'].to_s, row['Field'] if row['Field']
          end
        end"
     end

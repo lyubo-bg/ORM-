@@ -1,6 +1,5 @@
 load 'MySQL2.rb'
 load 'SQLite3.rb'
-load 'ORM.rb'
 
 module MyORM
 	class DatabaseManager

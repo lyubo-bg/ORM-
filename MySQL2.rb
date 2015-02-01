@@ -1,4 +1,4 @@
-load 'ORM.rb'
+require 'mysql2'
 
 module MyORM
 	class MySQL2
