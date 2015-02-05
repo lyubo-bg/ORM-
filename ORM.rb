@@ -78,6 +78,7 @@ module MyORM
     def create_attr( name )
       create_method( "#{name}=".to_sym ) do |val|
         instance_variable_set( "@" + name, val)
+        MyORM::DatabaseManager.add_prop_to_db @name, name, val
       end
 
       create_method( name.to_sym ) do
@@ -96,11 +97,18 @@ module MyORM
 
   class BaseUtils
     def self.initialize_body constructor_params
-      "def initialize(#{constructor_params})
-         super MyORM::DatabaseManager.connection
+      "def initialize(#{constructor_params}, connection:)
+         @connection = connection
+         @name = self.class.name.downcase
          schema = MyORM::DatabaseManager.get_partial_schema self.class.name.downcase
          schema.each do |row|
            puts row['Field'].to_s, row['Field'] if row['Field']
+         end
+         if make_attr_accessor
+           puts 'Your mapping has been done successfully!'
+         else
+           puts 'Your mapping cant be done the table
+           you have chosen probably doesnt exist!'
          end
        end"
     end
