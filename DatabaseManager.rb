@@ -23,8 +23,7 @@ module MyORM
 		def self.add_prop_to_db tablename, name, value
 			case self.flag
 			when "mysql"
-				MySQL2.connection.query("INSERT INTO #{tablename}
-																(#{name}) VALUES (#{value})")
+				MySQL2.add_prop_to_db tablename, name, value
 			when "sqlite"
 			end
 		end

@@ -93,28 +93,38 @@ module MyORM
       self.class_eval res
     end
 
+    def call_attr_accessor
+      if make_attr_accessor
+           puts 'Your mapping has been done successfully!'
+         else
+           puts 'Your mapping cannot be done the table
+           you have chosen probably does not exist!'
+        end
+    end
+
+    def get
+      
+    end
+
   end
 
   class BaseUtils
     def self.initialize_body constructor_params
-      "def initialize(#{constructor_params}, connection:)
-         @connection = connection
+      "def initialize(#{constructor_params})
+         @connection = MyORM::Base.connection
          @name = self.class.name.downcase
          schema = MyORM::DatabaseManager.get_partial_schema self.class.name.downcase
          schema.each do |row|
-           puts row['Field'].to_s, row['Field'] if row['Field']
+           if eval(row['Field'])
+             MyORM::DatabaseManager.add_prop_to_db @name, row['Field'], eval(row['Field'])
+           end
          end
-         if make_attr_accessor
-           puts 'Your mapping has been done successfully!'
-         else
-           puts 'Your mapping cant be done the table
-           you have chosen probably doesnt exist!'
-         end
+         call_attr_accessor
        end"
     end
 
     def self.create_initialize_param(row) 
-      if row["NULL"] === "NO"
+      if row["NULL"].equal? "NO"
         row["Field"] + ':'
       else
         row["Field"] + ": nil"
