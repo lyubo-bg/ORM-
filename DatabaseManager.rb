@@ -20,10 +20,10 @@ module MyORM
 			@@connection = connection
 		end
 
-		def self.add_prop_to_db tablename, name, value
+		def self.add_object_to_db params
 			case self.flag
 			when "mysql"
-				MySQL2.add_prop_to_db tablename, name, value
+				MySQL2.add_object_to_db params
 			when "sqlite"
 			end
 		end
@@ -61,6 +61,15 @@ module MyORM
       case self.flag
       when "mysql"
       	MySQL2.table_exists? name
+      when "sqlite"
+      	SQLite3.table_exists? name
+      end
+    end
+
+    def get_prop_from_db id, name, table_name
+      case self.flag
+      when "mysql"
+      	MySQL2.get_prop_from_db id, name
       when "sqlite"
       	SQLite3.table_exists? name
       end

@@ -82,7 +82,7 @@ module MyORM
       end
 
       create_method( name.to_sym ) do
-        instance_variable_get( "@" + name ) 
+        get_prop_from_db @id, name, @name
       end
     end
 
@@ -102,10 +102,6 @@ module MyORM
         end
     end
 
-    def get
-      
-    end
-
   end
 
   class BaseUtils
@@ -113,22 +109,27 @@ module MyORM
       "def initialize(#{constructor_params})
          @connection = MyORM::Base.connection
          @name = self.class.name.downcase
+
+         filled_params = []
+         filled_params << @name
+
          schema = MyORM::DatabaseManager.get_partial_schema self.class.name.downcase
+         
          schema.each do |row|
            if eval(row['Field'])
-             MyORM::DatabaseManager.add_prop_to_db @name, row['Field'], eval(row['Field'])
+             filled_params << [row['Field'], eval(row['Field'])]
            end
          end
+
+         puts MyORM::DatabaseManager.add_object_to_db(filled_params)
          call_attr_accessor
        end"
     end
 
     def self.create_initialize_param(row) 
-      if row["NULL"].equal? "NO"
-        row["Field"] + ':'
-      else
-        row["Field"] + ": nil"
-      end
+      return row["Field"] + ":" if row["Field"] == "NO" && row["Extra"] == ""
+      row["Field"] + ": nil"
     end
+
   end
 end

@@ -7,9 +7,20 @@ module MyORM
 				@@connection = con
 			end
 
-			def add_prop_to_db tablename, name, value
-				@@connection.connection.query "INSERT INTO #{tablename}
-																			 (#{name}) VALUES ('#{value}')"
+			def add_object_to_db params
+				tablename = params.shift
+				names, values = [], []
+				params.each do |pair|
+ 					names << pair[0]
+ 					if pair[1].class == String
+ 						values << "'" + pair[1] + "'"
+ 					else
+ 						values << pair[1]
+ 					end
+				end
+				joined_names, joined_values = names.join(', '), values.join(', ')
+				@@connection.connection.query "INSERT INTO #{tablename} (#{joined_names}) VALUES (#{joined_values})"
+        get_id
 			end
 
 			def get_partial_schema name
@@ -37,6 +48,20 @@ module MyORM
 	        return false
 	      end
 	      true
+	    end
+
+	    def get_id
+	    	res = @@connection.connection.query "SELECT LAST_INSERT_ID()"
+	    	temp = []
+	    	res.each { |n| temp << n }
+	    	temp[0]["LAST_INSERT_ID()"]
+	    end
+
+	    def get_prop_from_db id, name, tablename
+	    	res = @@connection.connection.query "select #{name} from #{tablename} where id = #{id}"
+	    	result = []
+	    	res.each { |n| result << n }
+	    	return result[0][name]
 	    end
   	end
 	end
