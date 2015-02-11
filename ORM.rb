@@ -17,7 +17,7 @@ module MyORM
 
     def self.inherited subclass
       MyORM::DatabaseManager.connection = self.connection
-      MyORM::DatabaseManager.flag = "mysql"
+      MyORM::DatabaseManager.connection = self.connection.flag
       MyORM::DatabaseManager.connection_to_db
       @@name = subclass.name.downcase
       self.create_initialize
@@ -49,16 +49,15 @@ module MyORM
       if MyORM::DatabaseManager.table_exists? name
         schema = MyORM::DatabaseManager.get_partial_schema name
         schema.each do |column|
-          create_attr(column["Field"])
+          create_attr column["Field"]
         end
         return true
       end
       false
     end
 
-    def self.add_prop_to_db name, val
-      puts name
-      puts val
+    def destroy
+      MyORM::DatabaseManager.destroy @id
     end
 
     def self.get_constructor_params
@@ -71,18 +70,18 @@ module MyORM
       constructor_params_arr.join(", ")
     end
 
-    def create_method( name, &block )
+    def create_method name, &block 
       self.class.send( :define_method, name, &block )
     end
 
-    def create_attr( name )
+    def create_attr name 
       create_method( "#{name}=".to_sym ) do |val|
         instance_variable_set( "@" + name, val)
-        MyORM::DatabaseManager.add_prop_to_db @name, name, val
+        MyORM::DatabaseManager.add_prop_to_db @primary_key, id, @name, name, val
       end
 
       create_method( name.to_sym ) do
-        get_prop_from_db @id, name, @name
+        get_prop_from_db @primary_key ,@id, name, @name
       end
     end
 
@@ -101,12 +100,11 @@ module MyORM
            you have chosen probably does not exist!'
         end
     end
-
   end
 
   class BaseUtils
     def self.initialize_body constructor_params
-      "def initialize(#{constructor_params})
+      "def initialize(#{constructor_params}, has_one: nil, has_many: nil, belongs_to:nil)
          @connection = MyORM::Base.connection
          @name = self.class.name.downcase
 
@@ -116,6 +114,7 @@ module MyORM
          schema = MyORM::DatabaseManager.get_partial_schema self.class.name.downcase
          
          schema.each do |row|
+           @primary_key = row['Field'] if row['Key'] == 'PRI'
            if eval(row['Field'])
              filled_params << [row['Field'], eval(row['Field'])]
            end

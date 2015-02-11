@@ -74,5 +74,23 @@ module MyORM
       	SQLite3.table_exists? name
       end
     end
+
+    def add_prop_to_db primary_key, id, name, value, table_name 
+    	case self.flag
+      when "mysql"
+      	MySQL2.add_prop_to_db primary_key, id, name, value, table_name
+      when "sqlite"
+      	SQLite3.add_prop_to_db primary_key, id, name, value, table_name
+      end
+    end
+
+    def destroy primary_key, id, table_name
+    	case self.flag
+      when "mysql"
+      	MySQL2.destroy primary_key, id, table_name
+      when "sqlite"
+      	SQLite3.destroy primary_key, id, table_name
+      end
+    end
 	end
 end

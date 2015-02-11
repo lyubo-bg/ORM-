@@ -57,11 +57,21 @@ module MyORM
 	    	temp[0]["LAST_INSERT_ID()"]
 	    end
 
-	    def get_prop_from_db id, name, tablename
-	    	res = @@connection.connection.query "select #{name} from #{tablename} where id = #{id}"
+	    def get_prop_from_db id, name, table_name
+	    	res = @@connection.connection.query "SELECT #{name} FROM #{table_name} WHERE id = #{id}"
 	    	result = []
 	    	res.each { |n| result << n }
 	    	return result[0][name]
+	    end
+
+	    def destroy primary_key, id, table_name
+	    	@@connection.connection.query "DELETE FROM #{table_name} WHERE #{primary_key} = #{id}"
+	    end
+
+	    def add_prop_to_db primary_key, id, prop_name, value, table_name
+	    	@@connection.connection.query "UPDATE #{table_name}
+	    																 SET #{prop_name} = #{value}
+	    																 WHERE #{primary_key} = #{id}"
 	    end
   	end
 	end
