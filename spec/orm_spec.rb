@@ -19,7 +19,7 @@ describe  MyORM::Base do
 	before :each do
 		mysql_con.connection.query("DELETE FROM #{table_name}")
 		class Tests < MyORM::Base
-		end
+		end 
 	end
 
 	it "creates the expected class" do
@@ -48,4 +48,4 @@ describe  MyORM::Base do
 		expect(test.active).to eq nil
 	end
 
-end
+end 

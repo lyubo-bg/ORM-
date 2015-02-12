@@ -1,6 +1,6 @@
 require 'yaml'
 require '../MySQL2'
-require '../Connection'
+require '../Connection' 
 
 describe  MyORM::MySQL2 do 
 	#create MySQL database connection
