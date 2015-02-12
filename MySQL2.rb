@@ -38,7 +38,6 @@ module MyORM
 	    def get_full_schema name
 	      query_string = "SHOW COLUMNS FROM #{name}"
 	      result = @@connection.connection.query(query_string)
-	      result.each { |row| puts row }
     	end
 
     	def table_exists?(name)
@@ -57,11 +56,18 @@ module MyORM
 	    	temp[0]["LAST_INSERT_ID()"]
 	    end
 
-	    def get_prop_from_db id, name, table_name
-	    	res = @@connection.connection.query "SELECT #{name} FROM #{table_name} WHERE id = #{id}"
+	    def get_prop_from_db primary_key, id, name, table_name
+	    	s = "SELECT #{name} FROM #{table_name} WHERE #{primary_key} = #{id}"
+	    	puts s
+	    	res = @@connection.connection.query s
 	    	result = []
 	    	res.each { |n| result << n }
-	    	return result[0][name]
+	    	begin
+	    		result[0][name]
+	    	rescue Exception => e
+	    		nil
+	    	end
+	    	
 	    end
 
 	    def destroy primary_key, id, table_name

@@ -1,6 +1,6 @@
 require "mysql2"
-load 'Connection.rb'
-load 'DatabaseManager.rb'
+require_relative 'Connection.rb'
+require_relative 'DatabaseManager.rb'
 
 module MyORM
   class Base
@@ -15,9 +15,40 @@ module MyORM
       end
     end
 
+    attr_accessor :connection, :name
+
+    def destroy
+      MyORM::DatabaseManager.destroy @id
+    end
+
+    def call_make_attr_accessor
+      if make_attr_accessor
+           puts 'Your mapping has been done successfully!'
+         else
+           puts 'Your mapping cannot be done the table
+           you have chosen probably does not exist!'
+        end
+    end
+
+    def self.get_constructor_params
+      schema = MyORM::DatabaseManager.get_full_schema @@name
+      constructor_params_arr = []
+      schema.each do |row| 
+        temp = BaseUtils.create_initialize_param row 
+        constructor_params_arr << temp
+      end
+      constructor_params_arr.join(", ")
+    end
+
+    def self.create_initialize()
+      constructor_params = get_constructor_params
+      res = BaseUtils.initialize_body constructor_params
+      self.class_eval res
+    end
+
     def self.inherited subclass
       MyORM::DatabaseManager.connection = self.connection
-      MyORM::DatabaseManager.connection = self.connection.flag
+      MyORM::DatabaseManager.flag = self.connection.flag
       MyORM::DatabaseManager.connection_to_db
       @@name = subclass.name.downcase
       self.create_initialize
@@ -43,7 +74,7 @@ module MyORM
       params_hash
     end
 
-    attr_accessor :connection, :name
+    private
 
     def make_attr_accessor
       if MyORM::DatabaseManager.table_exists? name
@@ -56,49 +87,20 @@ module MyORM
       false
     end
 
-    def destroy
-      MyORM::DatabaseManager.destroy @id
-    end
-
-    def self.get_constructor_params
-      schema = MyORM::DatabaseManager.get_full_schema @@name
-      constructor_params_arr = []
-      schema.each do |row| 
-        temp = BaseUtils.create_initialize_param row 
-        constructor_params_arr << temp
-      end
-      constructor_params_arr.join(", ")
-    end
-
     def create_method name, &block 
       self.class.send( :define_method, name, &block )
     end
 
-    def create_attr name 
+    def create_attr name
       create_method( "#{name}=".to_sym ) do |val|
         instance_variable_set( "@" + name, val)
         MyORM::DatabaseManager.add_prop_to_db @primary_key, id, @name, name, val
       end
 
       create_method( name.to_sym ) do
-        get_prop_from_db @primary_key ,@id, name, @name
+        puts @primary_key, @id
+        MyORM::DatabaseManager.get_prop_from_db @primary_key, @id, name, @name
       end
-    end
-
-    def self.create_initialize()
-      constructor_params = get_constructor_params
-      res = BaseUtils.initialize_body constructor_params
-      puts res
-      self.class_eval res
-    end
-
-    def call_attr_accessor
-      if make_attr_accessor
-           puts 'Your mapping has been done successfully!'
-         else
-           puts 'Your mapping cannot be done the table
-           you have chosen probably does not exist!'
-        end
     end
   end
 
@@ -111,23 +113,26 @@ module MyORM
          filled_params = []
          filled_params << @name
 
-         schema = MyORM::DatabaseManager.get_partial_schema self.class.name.downcase
+         schema = MyORM::DatabaseManager.get_full_schema self.class.name.downcase
          
          schema.each do |row|
            @primary_key = row['Field'] if row['Key'] == 'PRI'
+           puts @primary_key
            if eval(row['Field'])
              filled_params << [row['Field'], eval(row['Field'])]
            end
          end
 
-         puts MyORM::DatabaseManager.add_object_to_db(filled_params)
-         call_attr_accessor
+         MyORM::DatabaseManager.add_object_to_db filled_params
+         @id = MyORM::DatabaseManager.get_id
+         call_make_attr_accessor
        end"
     end
 
     def self.create_initialize_param(row) 
-      return row["Field"] + ":" if row["Field"] == "NO" && row["Extra"] == ""
-      row["Field"] + ": nil"
+      puts row["Field"], row["Extra"]
+      return row["Field"] + ":" if row["Null"] == "NO" && row["Extra"] == "" && row["KEY"] == "PRY"
+      row["Field"] + ": nil" 
     end
 
   end
