@@ -28,8 +28,8 @@ module MyORM
       Mysql2::Client.new(:host => host, :username => username, :password => password, :database => database)
     end 
 
-    def establish_connection_sqlite(database:,host:)
-      
+    def establish_connection_sqlite(database:)
+      SQLite3::Database.new database
     end
   end
 end 
