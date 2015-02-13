@@ -23,21 +23,9 @@ module MyORM
         get_id
       end
 
-      def get_partial_schema name
-        query_string = "SHOW COLUMNS FROM #{name}"
-        result = @@connection.connection.execute(query_string)
-        table_info = []
-        result.each do | row |
-          temp = {}
-          temp["Field"], temp["Type"] = row["Field"], row["Type"]
-          table_info << temp
-        end
-        table_info
-      end
-
       def get_full_schema name
-        query_string = "SHOW COLUMNS FROM #{name}"
-        result = @@connection.connection.execute(query_string)
+        query_string = ".schema #{name}"
+        puts query_string
       end
 
       def table_exists?(name)

@@ -9,19 +9,17 @@ module MyORM
       	@flag = "mysql2"
         @connection = establish_connection_mysql2(database: database, host: host, username: username, password: password)
       elsif (adapter == 'sqlite3')
-        @connection = establish_connection_sqlite
+        @connection = establish_connection_sqlite database: database
       else
         puts "You have given this adapter: #{adapter}, which is invalid"
       end
     end
 
-    attr_accessor :flag
+    attr_accessor :flag, :connection
 
     # def fill_config_file(adapter:, database:,host: nil, username: nil, password: nil)
     #   f = File.open("config.rb", "w") { |file|  }
     # end
-
-    attr_accessor :connection
 
     #Makes connection with the server
     def establish_connection_mysql2(database:,host:,username:,password:)
