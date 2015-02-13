@@ -30,6 +30,10 @@ describe  MyORM::SQLite3 do
     expect(res[0][2]).to eq 1
   end
 
+  it "helps" do
+    puts con.connection.table_info("tests")
+  end
+
   it "checks if table exists by given name" do
     expect(MyORM::SQLite3.table_exists? table_name).to eq true
     expect(MyORM::SQLite3.table_exists? "nqma_takova_ime").to eq false
@@ -38,7 +42,7 @@ describe  MyORM::SQLite3 do
   it "gets last inserted id into table" do
     con.connection.execute("INSERT INTO #{table_name}
                           (id) VALUES (5);")
-    expect(MyORM::SQLite3.get_id("id", table_name)).to eq 5
+    expect(MyORM::SQLite3.get_id(table_name)).to eq 5
   end
 
   it "adds property to database" do

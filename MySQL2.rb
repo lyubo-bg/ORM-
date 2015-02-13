@@ -58,7 +58,6 @@ module MyORM
 
       def get_prop_from_db primary_key, id, name, table_name
         s = "SELECT #{name} FROM #{table_name} WHERE #{primary_key} = #{id}"
-        puts s
         res = @@connection.connection.query s
         result = []
         res.each { |n| result << n }
@@ -74,10 +73,15 @@ module MyORM
         @@connection.connection.query "DELETE FROM #{table_name} WHERE #{primary_key} = #{id}"
       end
 
-      def add_prop_to_db primary_key, id, prop_name, value, table_name
+      def add_prop_to_db primary_key, id, prop_name, table_name, value
         @@connection.connection.query "UPDATE #{table_name}
                                        SET #{prop_name} = #{value}
                                        WHERE #{primary_key} = #{id}"
+      end
+
+      def create_initialize_param row
+        return row["Field"] + ":" if row["Null"] == "NO" && row["Extra"] == "" && row["KEY"] == "PRY"
+        row["Field"] + ": nil" 
       end
     end
   end

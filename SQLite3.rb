@@ -27,8 +27,9 @@ module MyORM
           end
         end
         joined_names, joined_values = names.join(', '), values.join(', ')
-        connection.connection.execute "INSERT INTO #{tablename} (#{joined_names}) VALUES (#{joined_values})"
-        get_id (get_primary_key_name(tablename)), tablename
+        s = "INSERT INTO #{tablename} (#{joined_names}) VALUES (#{joined_values})"
+        connection.connection.execute s
+        get_id tablename
       end
 
       def get_full_schema name
@@ -42,11 +43,8 @@ module MyORM
         return true
       end
 
-      def get_id primary_key, tablename
-        rowid = connection.connection.last_insert_row_id
-        query_string = "SELECT #{primary_key} from #{tablename} WHERE rowid = #{rowid}"
-        res = connection.connection.execute (query_string)
-        res[0][0]
+      def get_id tablename
+        __get_id (get_primary_key_name(tablename)), tablename
       end
 
       def get_prop_from_db primary_key, id, name, table_name
@@ -55,7 +53,7 @@ module MyORM
         result = []
         res.each { |n| result << n }
         begin
-          result[0][name]
+          result[0][0]
         rescue Exception => e
           nil
         end
@@ -66,10 +64,16 @@ module MyORM
         @@connection.connection.execute "DELETE FROM #{table_name} WHERE #{primary_key} = #{id}"
       end
 
-      def add_prop_to_db primary_key, id, prop_name, value, table_name
+      def add_prop_to_db primary_key, id,table_name, prop_name , value                                    
         @@connection.connection.execute "UPDATE #{table_name}
-                                        SET #{prop_name} = #{value}
+                                        SET #{prop_name} = '#{value}'
                                         WHERE #{primary_key} = #{id}"
+        puts s                                        
+      end
+
+      def create_initialize_param (row)
+        return row["name"] + ":" if row["notnull"] == "NO" && row["pk"] == 1
+        row["name"] + ": nil" 
       end
 
       private
@@ -80,6 +84,13 @@ module MyORM
             return row["name"]
           end
         end
+      end
+
+      def __get_id primary_key, tablename
+        rowid = connection.connection.last_insert_row_id
+        query_string = "SELECT #{primary_key} from #{tablename} WHERE rowid = #{rowid}"
+        res = connection.connection.execute (query_string)
+        res[0][0]
       end
     end
 	end

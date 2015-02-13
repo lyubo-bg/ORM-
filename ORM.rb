@@ -7,27 +7,16 @@ module MyORM
     def initialize (connection)
       @connection = connection
       @name = self.class.name.downcase
-      if make_attr_accessor
-        puts "Your mapping has been done successfully!"
-      else
-        puts "Your mapping can't be done the table
-        you have chosen probably doesn't exist!"
-      end
     end
 
     attr_accessor :connection, :name
 
-    def destroy 
+    def destroy
       MyORM::DatabaseManager.destroy @primary_key_name, @id, @name
     end
 
     def call_make_attr_accessor
-      if make_attr_accessor
-           puts 'Your mapping has been done successfully!'
-         else
-           puts 'Your mapping cannot be done the table
-           you have chosen probably does not exist!'
-        end
+      make_attr_accessor
     end
 
     def self.get_constructor_params
@@ -78,13 +67,16 @@ module MyORM
 
     def make_attr_accessor
       if MyORM::DatabaseManager.table_exists? name
-        schema = MyORM::DatabaseManager.get_partial_schema name
+        schema = MyORM::DatabaseManager.get_full_schema name
         schema.each do |column|
-          create_attr column["Field"]
+          if(MyORM::DatabaseManager.connection.flag == "mysql2")
+            create_attr column["Field"]
+          else
+            puts column["name"]
+            create_attr column["name"]
+          end
         end
-        return true
       end
-      false
     end
 
     def create_method name, &block 
@@ -93,8 +85,8 @@ module MyORM
 
     def create_attr name
       create_method( "#{name}=".to_sym ) do |val|
-        instance_variable_set( "@" + name, val)
-        MyORM::DatabaseManager.add_prop_to_db @primary_key_name, id, @name, name, val
+        puts "#{@primary_key_name},#{@id},#{@name},#{name},#{val}"
+        MyORM::DatabaseManager.add_prop_to_db @primary_key_name, @id, name, @name, val
       end
 
       create_method( name.to_sym ) do
@@ -115,22 +107,29 @@ module MyORM
          schema = MyORM::DatabaseManager.get_full_schema self.class.name.downcase
          
          schema.each do |row|
-           @primary_key_name = row['Field'] if row['Key'] == 'PRI'
-           if eval(row['Field'])
-             filled_params << [row['Field'], eval(row['Field'])]
+           if(MyORM::DatabaseManager.connection.flag == 'mysql2')
+             @primary_key_name = row['Field'] if row['Key'] == 'PRI'
+             if eval(row['Field'])
+               filled_params << [row['Field'], eval(row['Field'])]
+             end
+           else
+             @primary_key_name = row['name'] if row['pk'] == 1
+             if eval(row['name'])
+               filled_params << [row['name'], eval(row['name'])]
+             end
            end
          end
 
          MyORM::DatabaseManager.add_object_to_db filled_params
-         @id = MyORM::DatabaseManager.get_id
+         @id = MyORM::DatabaseManager.get_id @name
          call_make_attr_accessor
        end"
     end
 
-    def self.create_initialize_param(row) 
-      puts row["Field"], row["Extra"]
-      return row["Field"] + ":" if row["Null"] == "NO" && row["Extra"] == "" && row["KEY"] == "PRY"
-      row["Field"] + ": nil" 
+    #@id = MyORM::DatabaseManager.get_id @name
+
+    def self.create_initialize_param (row)
+      MyORM::DatabaseManager.create_initialize_param row
     end
 
   end

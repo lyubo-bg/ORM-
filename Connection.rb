@@ -11,6 +11,7 @@ module MyORM
       	@flag = "mysql2"
         @connection = establish_connection_mysql2(database: database, host: host, username: username, password: password)
       elsif (adapter == 'sqlite3')
+        @flag = "sqlite"
         @connection = establish_connection_sqlite database: database
       else
         puts "You have given this adapter: #{adapter}, which is invalid"

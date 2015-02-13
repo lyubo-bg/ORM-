@@ -26,6 +26,7 @@ module MyORM
         when "mysql2"
           MySQL2.add_object_to_db params
         when "sqlite"
+          SQLite3.add_object_to_db params
         end
       end
 
@@ -76,16 +77,16 @@ module MyORM
         when "mysql2"
           MySQL2.get_prop_from_db primary_key, id, name, table_name
         when "sqlite"
-          SQLite3.table_exists? name
+          SQLite3.get_prop_from_db primary_key, id, name, table_name
         end
       end
 
-      def add_prop_to_db primary_key, id, name, value, table_name 
+      def add_prop_to_db primary_key, id, name, table_name ,value
         case self.flag
         when "mysql2"
-          MySQL2.add_prop_to_db primary_key, id, name, value, table_name
+          MySQL2.add_prop_to_db primary_key, id, table_name, name, value 
         when "sqlite"
-          SQLite3.add_prop_to_db primary_key, id, name, value, table_name
+          SQLite3.add_prop_to_db primary_key, id, table_name, name, value
         end
       end
 
@@ -98,12 +99,21 @@ module MyORM
         end
       end
 
-      def get_id
+      def get_id tablename
         case self.flag
         when "mysql2"
           MySQL2.get_id
         when "sqlite"
-          SQLite3.get_id
+          SQLite3.get_id tablename
+        end
+      end
+
+      def create_initialize_param row
+        case self.flag
+        when "mysql2"
+          MySQL2.create_initialize_param row
+        when "sqlite"
+          SQLite3.create_initialize_param row
         end
       end
     end
