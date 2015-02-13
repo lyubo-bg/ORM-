@@ -1,7 +1,7 @@
 require 'sqlite3'
 
 module MyORM
-	class SQLite3
+  class SQLite3
     class << self
       def connection= con
         @@connection = con
@@ -67,8 +67,7 @@ module MyORM
       def add_prop_to_db primary_key, id,table_name, prop_name , value                                    
         @@connection.connection.execute "UPDATE #{table_name}
                                         SET #{prop_name} = '#{value}'
-                                        WHERE #{primary_key} = #{id}"
-        puts s                                        
+                                        WHERE #{primary_key} = #{id}"                                     
       end
 
       def create_initialize_param (row)
@@ -93,5 +92,5 @@ module MyORM
         res[0][0]
       end
     end
-	end
+  end
 end 
