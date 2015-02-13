@@ -7,6 +7,10 @@ module MyORM
         @@connection = con
       end
 
+      def connection
+        @@connection
+      end
+
       def add_object_to_db params
         tablename = params.shift
         names, values = [], []
@@ -14,34 +18,35 @@ module MyORM
           names << pair[0]
           if pair[1].class == String
             values << "'" + pair[1] + "'"
+          elsif pair[1] == true
+            values << 1
+          elsif pair[1] == false
+            values << 0
           else
             values << pair[1]
           end
         end
         joined_names, joined_values = names.join(', '), values.join(', ')
-        @@connection.connection.execute "INSERT INTO #{tablename} (#{joined_names}) VALUES (#{joined_values})"
-        get_id
+        connection.connection.execute "INSERT INTO #{tablename} (#{joined_names}) VALUES (#{joined_values})"
+        get_id (get_primary_key_name(tablename)), tablename
       end
 
       def get_full_schema name
-        query_string = ".schema #{name}"
-        puts query_string
-      end
+        connection.connection.table_info name
+      end 
 
       def table_exists?(name)
-        begin
-          @@connection.connection.execute("show columns from #{name}")
-        rescue => ex
+        if (connection.connection.table_info name).to_s == '[]'
           return false
         end
-        true
+        return true
       end
 
-      def get_id
-        res = @@connection.connection.execute "SELECT LAST_INSERT_ID()"
-        temp = []
-        res.each { |n| temp << n }
-        temp[0]["LAST_INSERT_ID()"]
+      def get_id primary_key, tablename
+        rowid = connection.connection.last_insert_row_id
+        query_string = "SELECT #{primary_key} from #{tablename} WHERE rowid = #{rowid}"
+        res = connection.connection.execute (query_string)
+        res[0][0]
       end
 
       def get_prop_from_db primary_key, id, name, table_name
@@ -63,8 +68,18 @@ module MyORM
 
       def add_prop_to_db primary_key, id, prop_name, value, table_name
         @@connection.connection.execute "UPDATE #{table_name}
-                                       SET #{prop_name} = #{value}
-                                       WHERE #{primary_key} = #{id}"
+                                        SET #{prop_name} = #{value}
+                                        WHERE #{primary_key} = #{id}"
+      end
+
+      private
+
+      def get_primary_key_name tablename
+        connection.connection.table_info(tablename).each do |row|
+          if row["pk"]
+            return row["name"]
+          end
+        end
       end
     end
 	end

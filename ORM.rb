@@ -17,8 +17,8 @@ module MyORM
 
     attr_accessor :connection, :name
 
-    def destroy
-      MyORM::DatabaseManager.destroy @id
+    def destroy 
+      MyORM::DatabaseManager.destroy @primary_key_name, @id, @name
     end
 
     def call_make_attr_accessor
@@ -94,12 +94,11 @@ module MyORM
     def create_attr name
       create_method( "#{name}=".to_sym ) do |val|
         instance_variable_set( "@" + name, val)
-        MyORM::DatabaseManager.add_prop_to_db @primary_key, id, @name, name, val
+        MyORM::DatabaseManager.add_prop_to_db @primary_key_name, id, @name, name, val
       end
 
       create_method( name.to_sym ) do
-        puts @primary_key, @id
-        MyORM::DatabaseManager.get_prop_from_db @primary_key, @id, name, @name
+        MyORM::DatabaseManager.get_prop_from_db @primary_key_name, @id, name, @name
       end
     end
   end
@@ -116,8 +115,7 @@ module MyORM
          schema = MyORM::DatabaseManager.get_full_schema self.class.name.downcase
          
          schema.each do |row|
-           @primary_key = row['Field'] if row['Key'] == 'PRI'
-           puts @primary_key
+           @primary_key_name = row['Field'] if row['Key'] == 'PRI'
            if eval(row['Field'])
              filled_params << [row['Field'], eval(row['Field'])]
            end

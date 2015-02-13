@@ -1,3 +1,5 @@
+require 'sqlite3'
+
 module MyORM
 	class Connection
 
@@ -27,7 +29,7 @@ module MyORM
     end 
 
     def establish_connection_sqlite(database:)
-      SQLite3::Database.new database
+      ::SQLite3::Database.new database
     end
   end
 end 
